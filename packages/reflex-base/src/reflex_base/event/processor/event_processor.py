@@ -539,7 +539,7 @@ class EventProcessor:
         try:
             parent_context = EventContext.get()
         except LookupError:
-            parent_context = self._root_context
+            parent_context = root
         task_future = await self.enqueue(
             token,
             event,
