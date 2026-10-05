@@ -98,7 +98,10 @@ export const getToken = () => {
 
 /** Get the saved client token to warm the transport before the app mounts. */
 const peekToken = () =>
-  getToken() || window.sessionStorage.getItem("token") || "";
+  token ||
+  window.sessionStorage.getItem(`${sessionStorageKey()}:token`) ||
+  window.sessionStorage.getItem("token") ||
+  "";
 
 /**
  * Get the URL for the backend server
@@ -259,6 +262,16 @@ if (typeof window !== "undefined") {
       return;
     }
     try {
+      // A cold transport would capture cookies before the shared session lock.
+      if (
+        !(
+          Number(
+            window.localStorage.getItem(`${sessionStorageKey()}:expires_at`),
+          ) > Date.now()
+        )
+      ) {
+        return;
+      }
       warmSocket = createSocket(
         getBackendURL(EVENTURL),
         [env.TRANSPORT],
@@ -794,7 +807,6 @@ export const connect = async (
     warmSocket ?? createSocket(endpoint, transports, session_token);
   warmSocket = null;
   cancelWarmup();
-  socket.current.auth = bootAuth(true);
   socket.current.wait_connect = false;
   let firstConnect = true;
   let finishBootstrap;
